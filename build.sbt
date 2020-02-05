@@ -8,7 +8,7 @@ val lwjglVersion = "3.2.3"
 
 val natives = sys.props("os.name") match {
   case "Linux" => "natives-linux"
-  case "Windows" => "natives-windows"
+  case "Windows 10" => "natives-windows"
 }
 
 libraryDependencies ++= Seq(
