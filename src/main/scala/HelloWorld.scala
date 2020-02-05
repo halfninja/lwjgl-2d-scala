@@ -8,15 +8,16 @@ import org.lwjgl.glfw.GLFW._
 import org.lwjgl.opengl.GL11._
 import org.lwjgl.system.MemoryStack._
 import org.lwjgl.system.MemoryUtil._
+import scala.util.Using
 
-object HelloWorld {
-  def main(args: Array[String]) = new HelloWorld().run()
+object HelloWorld extends App {
+  new HelloWorld().run()
 }
 
 class HelloWorld { // The window handle
   private var window = 0L
 
-  def run() = {
+  def run(): Unit = {
     System.out.println("Hello LWJGL " + Version.getVersion + "!")
     init()
     loop()
@@ -24,17 +25,17 @@ class HelloWorld { // The window handle
     glfwFreeCallbacks(window)
     glfwDestroyWindow(window)
     // Terminate GLFW and free the error callback
-    glfwTerminate
-    glfwSetErrorCallback(null).free
+    glfwTerminate()
+    glfwSetErrorCallback(null).free()
   }
 
-  private def init() = { // Setup an error callback. The default implementation
+  private def init(): Unit = { // Setup an error callback. The default implementation
     // will print the error message in System.err.
     GLFWErrorCallback.createPrint(System.err).set
     // Initialize GLFW. Most GLFW functions will not work before doing this.
-    if (!glfwInit) throw new IllegalStateException("Unable to initialize GLFW")
+    if (!glfwInit()) throw new IllegalStateException("Unable to initialize GLFW")
     // Configure GLFW
-    glfwDefaultWindowHints // optional, the current window hints are already the default
+    glfwDefaultWindowHints() // optional, the current window hints are already the default
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE) // the window will stay hidden after creation
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE) // the window will be resizable
     // Create the window
@@ -47,21 +48,16 @@ class HelloWorld { // The window handle
     })
 
     // Get the thread stack and push a new frame
-    try {
-      val stack = stackPush
-      try {
-        val pWidth = stack.mallocInt(1) // int*
-        val pHeight = stack.mallocInt(1)
-        // Get the window size passed to glfwCreateWindow
-        glfwGetWindowSize(window, pWidth, pHeight)
-        // Get the resolution of the primary monitor
-        val vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor)
-        // Center the window
-        glfwSetWindowPos(window, (vidmode.width - pWidth.get(0)) / 2, (vidmode.height - pHeight.get(0)) / 2)
-      } finally {
-        if (stack != null) stack.close()
-      }
-    } // the stack frame is popped automatically
+    Using(stackPush()) { stack =>
+      val pWidth = stack.mallocInt(1) // int*
+      val pHeight = stack.mallocInt(1)
+      // Get the window size passed to glfwCreateWindow
+      glfwGetWindowSize(window, pWidth, pHeight)
+      // Get the resolution of the primary monitor
+      val vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor)
+      // Center the window
+      glfwSetWindowPos(window, (vidmode.width - pWidth.get(0)) / 2, (vidmode.height - pHeight.get(0)) / 2)
+    }
 
     // Make the OpenGL context current
     glfwMakeContextCurrent(window)
@@ -71,24 +67,22 @@ class HelloWorld { // The window handle
     glfwShowWindow(window)
   }
 
-  private def loop() = { // This line is critical for LWJGL's interoperation with GLFW's
+  private def loop(): Unit = { // This line is critical for LWJGL's interoperation with GLFW's
     // OpenGL context, or any context that is managed externally.
     // LWJGL detects the context that is current in the current thread,
     // creates the GLCapabilities instance and makes the OpenGL
     // bindings available for use.
-    GL.createCapabilities
+    GL.createCapabilities()
     // Set the clear color
     glClearColor(1.0f, 0.0f, 0.0f, 0.0f)
     // Run the rendering loop until the user has attempted to close
     // the window or has pressed the ESCAPE key.
-    while ( {
-      !glfwWindowShouldClose(window)
-    }) {
+    while (!glfwWindowShouldClose(window)) {
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) // clear the framebuffer
       glfwSwapBuffers(window) // swap the color buffers
       // Poll for window events. The key callback above will only be
       // invoked during this call.
-      glfwPollEvents
+      glfwPollEvents()
     }
   }
 }
